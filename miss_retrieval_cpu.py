@@ -55,7 +55,6 @@ class missRetrieval():
     
         print("Constructing new KB in RAM...")
         
-        # 直接在内存分配 (RAM)
         self.kb_embed = np.zeros((N, C+args.dim_x_mark, D), dtype=np.float32)
         self.kb_raw = np.zeros((N, L, C), dtype=np.float32)
 
@@ -166,7 +165,6 @@ class missRetrieval():
         B, L, C = x.shape
         D = self.args.latent_dim
 
-        # 1. 获取 Query Embedding
         with torch.no_grad():
             query_repr = self.encoder.get_representation(x, x_mark, mask=mask)
 
