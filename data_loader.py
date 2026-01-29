@@ -571,7 +571,7 @@ class Dataset_ETT_hour(Dataset):
         border1s = [0, 12 * 30 * 24 - self.seq_len, 12 * 30 * 24 + 4 * 30 * 24 - self.seq_len]
         border2s = [12 * 30 * 24, 12 * 30 * 24 + 4 * 30 * 24, 12 * 30 * 24 + 8 * 30 * 24]
         border1 = border1s[self.set_type]
-        border2 = border2s[self.set_type] # 取border1到border2的数据作为训练/验证/测试集, 训练姐12个月，验证/测试4个月。
+        border2 = border2s[self.set_type] 
 
         if self.features == 'M' or self.features == 'MS':
             cols_data = df_raw.columns[1:]
@@ -617,8 +617,7 @@ class Dataset_ETT_hour(Dataset):
         seq_x_mark = self.data_stamp[s_begin:s_end]
         seq_y_mark = self.data_stamp[r_begin:r_end]
 
-        # abs_index = self.border1 + index # 是否返回绝对索引。
-        return index, seq_x, seq_y, seq_x_mark, seq_y_mark  # index是当前train/valid/test的样本序号。
+        return index, seq_x, seq_y, seq_x_mark, seq_y_mark  
 
     def __len__(self):
         return len(self.data_x) - self.seq_len - self.pred_len + 1
