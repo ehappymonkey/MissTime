@@ -124,7 +124,7 @@ class missRetrieval():
         for start in tqdm(range(0, N, kb_batch_size), desc="Retrieving..."):
             end = min(start + kb_batch_size, N)
 
-            # 加载 KB Chunk (CPU -> GPU)
+    
             kb_chunk_cpu = torch.from_numpy(self.kb_embed[start:end]) 
             kb_chunk = kb_chunk_cpu.to(device) # [Chunk, C, D]
 
