@@ -27,9 +27,9 @@ class Exp_Anomaly_Detection(Exp_Basic):
         if self.args.model == 'saits':
             saits_config = {
                 "input_with_mask": True,
-                "MIT": True,  # 训练时设为 True
+                "MIT": True,
                 "param_sharing_strategy": "inner_group",
-                "device": self.device, # 或者是 'cuda'
+                "device": self.device,
                 "diagonal_attention_mask": True
             }
             model = SAITS(configs=self.args, n_groups=2, n_group_inner_layers=1, d_time=self.args.seq_len, d_feature=self.args.enc_in, d_model=self.args.d_model, d_inner=self.args.d_ff, n_head=self.args.n_heads,d_k=64, d_v=64, dropout=self.args.dropout, **saits_config)
@@ -48,7 +48,7 @@ class Exp_Anomaly_Detection(Exp_Basic):
             _, train_loader_unshuffled = self._get_data(flag='train', shuffle_flag=False)
             _, vali_loader_contra = self._get_data(flag='train', shuffle_flag=True, batch_size=self.args.contrastive_batch)
             # TimesNet
-            model.prepare_retrieval(train_loader_contra, vali_loader_contra, train_loader_unshuffled) # 前两个用于训练Encoder，后一个建立raw_data和embedding。
+            model.prepare_retrieval(train_loader_contra, vali_loader_contra, train_loader_unshuffled)
 
 
         
@@ -89,7 +89,7 @@ class Exp_Anomaly_Detection(Exp_Basic):
                         "indicating_mask": indicating_mask,
                         "X_holdout": batch_x_full 
                         }
-                    outputs = self.model(inputs, stage='val')['output'] # 输出是reconstruct的数据。
+                    outputs = self.model(inputs, stage='val')['output']
                 elif self.args.model == 'GinAR':
                     outputs = self.model(batch_x)
                 else:
@@ -149,7 +149,7 @@ class Exp_Anomaly_Detection(Exp_Basic):
                     "X_holdout": batch_x_full 
                     }
                     outputs = self.model(inputs, stage='train') 
-                    loss_impute = outputs['reconstruction_loss'] + outputs['imputation_loss'] # 相当于直接在full data上做个loss嘛。
+                    loss_impute = outputs['reconstruction_loss'] + outputs['imputation_loss']
                     imputed_data, reconstructed_data = outputs['imputed_data'], outputs['output']
                     loss_recon = criterion(reconstructed_data, imputed_data)
                     loss = loss_impute + loss_recon
@@ -158,12 +158,12 @@ class Exp_Anomaly_Detection(Exp_Basic):
                     f_dim = -1 if self.args.features == 'MS' else 0
                     outputs = outputs[:, :, f_dim:]
                     print(outputs)
-                    loss = criterion(outputs, batch_x) # 就是一个reconstruct输入的模型。
+                    loss = criterion(outputs, batch_x)
                 else:
                     outputs, _ = self.model(batch_x, None, None, None, batch_mask, batch_x_full, mode='train')
                     f_dim = -1 if self.args.features == 'MS' else 0
                     outputs = outputs[:, :, f_dim:]
-                    loss = criterion(outputs, batch_x) # 就是一个reconstruct输入的模型。
+                    loss = criterion(outputs, batch_x)
                 
                 train_loss.append(loss.item())
 
@@ -244,7 +244,7 @@ class Exp_Anomaly_Detection(Exp_Basic):
         attens_energy = np.concatenate(attens_energy, axis=0).reshape(-1)
         train_energy = np.array(attens_energy)
 
-        # (2) find the threshold, 这里计算reconstruct score是否应该除去无用的“missing channels?"
+
         attens_energy = []
         test_labels = []
         for i, (batch_x, batch_x_full, batch_y, batch_mask) in enumerate(test_loader):
@@ -264,9 +264,9 @@ class Exp_Anomaly_Detection(Exp_Basic):
                 }
                 outputs = self.model(inputs, stage='test')
                 imputed_data, recon_data = outputs['imputed_data'], outputs['output']
-                score = torch.mean(self.anomaly_criterion(imputed_data, recon_data), dim=-1) # 通过计算imputed data 和recon data来判断异常。
-                # loss = outputs['reconstruction_loss'] + outputs['imputation_loss'] # 相当于直接在full data上做个loss嘛。
-            # GinAR没有impute data，只能用原始的batch_x和recon_data计算来实现。
+                score = torch.mean(self.anomaly_criterion(imputed_data, recon_data), dim=-1)
+
+
             else:
                 outputs, x_recon_feat = self.model(batch_x, None, None, None, batch_mask, batch_x_full, mode='test')
                 score = torch.mean(self.anomaly_criterion(x_recon_feat, outputs), dim=-1)
@@ -308,7 +308,7 @@ class Exp_Anomaly_Detection(Exp_Basic):
 
         file_name = "result_anomaly_detection.txt"
         f = open(os.path.join(folder_path,file_name), 'a')
-        current_time = datetime.now().strftime("%m-%d %H:%M")  # 格式: 06-30 14:25
+        current_time = datetime.now().strftime("%m-%d %H:%M")
         f.write(f"{self.args.model}_{self.args.rag_type}_{self.args.retrieve_encoder} missing: ({self.args.mask_ratio}) ({current_time})\n")
         f.write("Accuracy : {:0.4f}, Precision : {:0.4f}, Recall : {:0.4f}, F-score : {:0.4f} ".format(
             accuracy, precision,

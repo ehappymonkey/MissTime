@@ -23,9 +23,9 @@ class Exp_Imputation(Exp_Basic):
         if self.args.model == 'saits':
             saits_config = {
                 "input_with_mask": True,
-                "MIT": True,  # 训练时设为 True
+                "MIT": True,
                 "param_sharing_strategy": "inner_group",
-                "device": self.device, # 或者是 'cuda'
+                "device": self.device,
                 "diagonal_attention_mask": True
             }
             model = SAITS(configs=self.args, n_groups=2, n_group_inner_layers=1, d_time=self.args.seq_len, d_feature=self.args.enc_in, d_model=self.args.d_model, d_inner=self.args.d_ff, n_head=self.args.n_heads,d_k=64, d_v=64, dropout=self.args.dropout, **saits_config)
@@ -44,7 +44,7 @@ class Exp_Imputation(Exp_Basic):
             _, train_loader_unshuffled = self._get_data(flag='train', shuffle_flag=False)
             _, vali_loader_contra = self._get_data(flag='train', shuffle_flag=True, batch_size=self.args.contrastive_batch)
             # TimesNet
-            model.prepare_retrieval(train_loader_contra, vali_loader_contra, train_loader_unshuffled) # 前两个用于训练Encoder，后一个建立raw_data和embedding。
+            model.prepare_retrieval(train_loader_contra, vali_loader_contra, train_loader_unshuffled)
 
 
         return model
@@ -85,7 +85,7 @@ class Exp_Imputation(Exp_Basic):
                     "X_holdout": batch_x_full 
                     }
                     outputs = self.model(inputs, stage='val')['imputed_data']
-                    # loss = outputs['reconstruction_loss'] + outputs['imputation_loss'] # 相当于直接在full data上做个loss嘛。
+
                 
                 elif self.args.model == 'TimeFilter':
                     if self.args.use_amp:
@@ -115,7 +115,7 @@ class Exp_Imputation(Exp_Basic):
                 loss = criterion(
                     pred[:, :, batch_mask == 0], 
                     true[:, :, batch_mask == 0]
-                ) # 验证时候计算missing通道上的损失。
+                )
                 # loss = criterion(outputs, batch_x_full)
                 if not math.isnan(loss):
                     total_loss.append(loss.item())
@@ -168,7 +168,7 @@ class Exp_Imputation(Exp_Basic):
                     "X_holdout": batch_x_full 
                     }
                     outputs = self.model(inputs, stage='train') 
-                    loss = outputs['reconstruction_loss'] + self.args.weight*outputs['imputation_loss'] # 相当于直接在full data上做个loss嘛。
+                    loss = outputs['reconstruction_loss'] + self.args.weight*outputs['imputation_loss']
                 
 
                 elif self.args.model == 'TimeFilter':
@@ -193,7 +193,7 @@ class Exp_Imputation(Exp_Basic):
                     f_dim = -1 if self.args.features == 'MS' else 0
                     outputs = outputs[:, :, f_dim:]
                     batch_x = batch_x[:, :, f_dim:]
-                    loss = criterion(outputs, batch_x_full) # 训练时候无missing channels，只能计算所有通道的损失！
+                    loss = criterion(outputs, batch_x_full)
                     train_loss.append(loss.item())
 
     
@@ -203,7 +203,7 @@ class Exp_Imputation(Exp_Basic):
                     outputs = outputs[:, :, f_dim:]
                     # add support for MS
                     batch_x = batch_x[:, :, f_dim:]
-                    loss = criterion(outputs, batch_x_full) # 训练时候无missing channels，只能计算所有通道的损失！
+                    loss = criterion(outputs, batch_x_full)
                     train_loss.append(loss.item())
 
                 if (i + 1) % 100 == 0:
@@ -269,7 +269,7 @@ class Exp_Imputation(Exp_Basic):
                     "X_holdout": batch_x_full 
                     }
                     outputs = self.model(inputs, stage='test')['imputed_data']
-                    # loss = outputs['reconstruction_loss'] + outputs['imputation_loss'] # 相当于直接在full data上做个loss嘛。
+
                   
                 elif self.args.model == 'TimeFilter':
                     if self.args.use_amp:
@@ -287,7 +287,7 @@ class Exp_Imputation(Exp_Basic):
     
                 else: 
                     outputs = self.model(batch_x, batch_x_mark, None, batch_y_mark, batch_mask, batch_x_full, mode='test', mask=None)
-                    # outputs是模型的输出。
+
 
                 # eval
                 f_dim = -1 if self.args.features == 'MS' else 0
@@ -296,7 +296,7 @@ class Exp_Imputation(Exp_Basic):
                 batch_x = batch_x[:, :, f_dim:]
                 outputs = outputs.detach().cpu().numpy()
                 pred = outputs
-                # true = batch_x.detach().cpu().numpy() # 这个true是否应该改为batch_x_full?
+
                 true = batch_x_full.detach().cpu().numpy()
                 preds.append(pred)
                 trues.append(true)
@@ -324,12 +324,12 @@ class Exp_Imputation(Exp_Basic):
         masks_expanded = np.repeat(masks_expanded, preds.shape[1], axis=1)
         eval_preds = preds[masks_expanded == 0]
         eval_trues = trues[masks_expanded == 0]
-        mae, mse, rmse, mape, mspe = metric(eval_preds, eval_trues) # 测试时候计算缺失通道上的损失。是不是应该计算所有的呢？
+        mae, mse, rmse, mape, mspe = metric(eval_preds, eval_trues)
         mae, mse, rmse, mape, mspe = metric(preds, trues) 
         print('mse:{}, mae:{}'.format(mse, mae))
         file_name = "result_imputation.txt"
         f = open(os.path.join(folder_path,file_name), 'a')
-        current_time = datetime.now().strftime("%m-%d %H:%M")  # 格式: 06-30 14:25
+        current_time = datetime.now().strftime("%m-%d %H:%M")
         f.write(f"{self.args.model}_{self.args.rag_type}_{self.args.retrieve_encoder} missing: ({self.args.mask_ratio}) ({current_time})\n")
         f.write('mse:{}, mae:{}'.format(mse, mae))
         f.write('\n')

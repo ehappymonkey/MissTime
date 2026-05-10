@@ -116,7 +116,7 @@ class Model(nn.Module):
     def prepare_retrieval(self, train_loader_unshuffled):
         # if self.args.rag_type == 'feature_rag' or self.args.rag_type == 'latent_rag':
         self.rt.prepare_dataset(self.args, train_loader_unshuffled) 
-           # self.rt.load_kb_to_gpu()  # 存储张量移到GPU里。
+
 
     def forecast(self, x_enc, x_mark_enc, batch_mask, x_full, mode):
 
@@ -152,17 +152,17 @@ class Model(nn.Module):
 
     def imputation(self, x_enc, x_mark_enc, batch_mask, x_full, mode, mask=None):
         x_rag_recon = 0
-        # feature-based RAG 补全缺失的通道。
+
         if mode != 'train':
             if self.args.use_full_retrieval:
-                # Oracle mode: 用完整 x 检索
+
                 full_obs_mask = torch.ones_like(batch_mask).to(batch_mask.device)  # (C,)
                 x_recon = self.rt.retrieve_recon(x_full, observed_mask=full_obs_mask)
             elif self.args.rag_type == 'feature_rag' or self.args.rag_type == 'latent_rag':
-                # Normal mode: 用 masked x 的observed variables检索
+
                 x_recon = self.rt.retrieve_recon(x_enc, observed_mask=batch_mask) # batch, seq_len, channel
             elif self.args.rag_type == 'no_rag':
-                # 测试时也不用检索，直接用缺失的x编码
+
                 x_recon = x_enc
             x_enc = torch.where(batch_mask.bool().to(x_enc.device), x_enc, x_recon)
             x_rag_recon = x_enc
@@ -198,17 +198,17 @@ class Model(nn.Module):
 
     def anomaly_detection(self, x_enc, batch_mask, x_full, mode):
         x_recon_feat = x_enc
-        # feature-based RAG 补全缺失的通道。
+
         if mode != 'train':
             if self.args.use_full_retrieval:
-                # Oracle mode: 用完整 x 检索
+
                 full_obs_mask = torch.ones_like(batch_mask).to(batch_mask.device)  # (C,)
                 x_recon = self.rt.retrieve_recon(x_full, observed_mask=full_obs_mask)
             elif self.args.rag_type == 'feature_rag' or self.args.rag_type == 'latent_rag':
-                # Normal mode: 用 masked x 的observed variables检索
+
                 x_recon = self.rt.retrieve_recon(x_enc, observed_mask=batch_mask) # batch, seq_len, channel
             else:
-                # 测试时也不用检索，直接用缺失的x编码
+
                 x_recon = x_enc
             x_enc = torch.where(batch_mask.bool().to(x_enc.device), x_enc, x_recon)
             x_recon_feat = x_enc
@@ -235,21 +235,21 @@ class Model(nn.Module):
         dec_out = dec_out.add(
                   (means[:, 0, :].unsqueeze(1).repeat(
                       1, self.pred_len + self.seq_len, 1)))
-        return dec_out, x_recon_feat # 这里直接使用了RAG的检索结果作为分数计算，没有经过模型？
+        return dec_out, x_recon_feat
 
     def classification(self, x_enc, batch_mask, x_full, mode):
 
-        # feature-based RAG 补全缺失的通道。
+
         if mode != 'train':
             if self.args.use_full_retrieval:
-                # Oracle mode: 用完整 x 检索
+
                 full_obs_mask = torch.ones_like(batch_mask).to(batch_mask.device)  # (C,)
                 x_recon = self.rt.retrieve_recon(x_full, observed_mask=full_obs_mask)
             elif self.args.rag_type == 'feature_rag' or self.args.rag_type == 'latent_rag':
-                # Normal mode: 用 masked x 的observed variables检索
+
                 x_recon = self.rt.retrieve_recon(x_enc, observed_mask=batch_mask) # batch, seq_len, channel
             else:
-                # 测试时也不用检索，直接用缺失的x编码
+
                 x_recon = x_enc
             x_enc = torch.where(batch_mask.bool().to(x_enc.device), x_enc, x_recon)
 

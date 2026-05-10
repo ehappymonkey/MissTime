@@ -129,7 +129,7 @@ class DataEmbedding(nn.Module):
 class DataEmbedding_inverted(nn.Module):
     def __init__(self, c_in, d_model, embed_type='fixed', freq='h', dropout=0.1):
         super(DataEmbedding_inverted, self).__init__()
-        self.value_embedding = nn.Linear(c_in, d_model) # c_in指的是seq_len。
+        self.value_embedding = nn.Linear(c_in, d_model)
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, x, x_mark, mask=None):
@@ -142,13 +142,13 @@ class DataEmbedding_inverted(nn.Module):
         #     x = self.value_embedding(torch.cat([x, x_mark.permute(0, 2, 1)], 1))
         # x: [Batch Variate(+4) d_model]
 
-        x = self.value_embedding(x) # 只使用本身embedding。
+        x = self.value_embedding(x)
         return self.dropout(x)
 
 class TopologyAwareEncoder(nn.Module):
     def __init__(self, configs):
         super().__init__()
-        # 假设 c_in 是变量数量 (C)
+
         self.c_in = configs.enc_in 
         self.latent_dim = configs.latent_dim
         
@@ -156,7 +156,7 @@ class TopologyAwareEncoder(nn.Module):
             configs.seq_len, configs.latent_dim, configs.embed, configs.freq, configs.dropout
         )
         
-        # 这里改+mark维度
+
         self.variate_embedding = nn.Parameter(torch.randn(1, self.c_in, self.latent_dim))
         # self.variate_embedding = nn.Parameter(torch.randn(1, self.c_in+configs.dim_x_mark, self.latent_dim))
         # 0: Observed, 1: Missing
@@ -164,23 +164,23 @@ class TopologyAwareEncoder(nn.Module):
         
     def forward(self, x, x_mark, mask):
         """
-        x: [B, L, C] (缺失处已填 0)
-        mask: [B, C] (1: 存在, 0: 缺失) -> 注意这里定义反一下方便 embedding
+        x: [B, L, C] ( 0)
+        mask: [B, C] (1: , 0: ) ->  embedding
         """
         
         # Step 1: Content Embedding
         # [B, L, C] -> [B, C, D]
-        x_enc = self.data_embedding(x, x_mark) # B, L, C/ B, L, 4, 这里用iTransformer编码相当于多了4个变量（token）。Variate ID编码并没有考虑这几个时间token。
+        x_enc = self.data_embedding(x, x_mark)
         
         # Step 2: Add Variate Embedding (Broadcasting)
         # [B, C, D] + [1, C, D] -> [B, C, D]
         x_enc = x_enc + self.variate_embedding
         
         # Step 3: Add Mask Embedding
-        # mask 输入是 [B, C], 1代表存在, 0代表缺失
-        # 为了配合 Embedding(2, D)，我们需要把 mask 变成 index
-        # 假设我们定义: embedding(0)=Observed_Emb, embedding(1)=Missing_Emb
-        # 那么我们需要把输入的 mask (1存在) 变成 (0存在), (0缺失) 变成 (1缺失)
+
+
+
+
 
         # d_mark = x_mark.shape[-1] if x_mark is not None else 0
 
@@ -193,7 +193,7 @@ class TopologyAwareEncoder(nn.Module):
 
         # mask_idx = 1 - full_mask.long() # [B, C]
         # [B, C, D]
-        # 避免x_mark影响。
+
         mask_idx = 1 - mask.long()
         mask_emb = self.mask_embedding(mask_idx)
         x_enc = x_enc + mask_emb

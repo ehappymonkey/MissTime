@@ -1,5 +1,5 @@
-# 使用available channels在线检索。
-# 配合onlineRetrieval使用，目前效果不如不检索的Dlinear。
+
+
 
 import torch
 import torch.nn as nn
@@ -38,13 +38,13 @@ class Model(nn.Module):
         self.rt = LatentRetrieval(
             topk=self.topm,
             )
-        self.ts2vec_params={'output_dims': configs.latent_dim, 'batch_size':configs.batch_size} # ts2vec需要自己建立data_loader来训练。
+        self.ts2vec_params={'output_dims': configs.latent_dim, 'batch_size':configs.batch_size}
         
         # args
         self.args = configs
         self.encoder = None
  
-        self.num_classes = getattr(configs, 'num_class', 10)  # 分类任务类别数
+        self.num_classes = getattr(configs, 'num_class', 10)
 
         if self.task_name == 'long_term_forecast' or self.task_name == 'short_term_forecast':
             self.linear_x = nn.Linear(self.seq_len, self.pred_len)
@@ -56,11 +56,11 @@ class Model(nn.Module):
         
     def prepare_dataset(self, train_data, task_name="classification"):
         """
-        准备检索用的数据集
+        
         Args:
-            train_data: (N, L, C) 训练数据集
+            train_data: (N, L, C) 
             task_name: "classification" or "forecasting"
-            处理数据集+训练encoder。
+            +encoder
         """
         train_x_list = []
         for i in range(len(train_data)):
@@ -95,39 +95,39 @@ class Model(nn.Module):
 
     def forecast(self, x_enc, index, batch_mask, x_for_retrieval=None, mode='train'):
         """
-        预测任务：用检索填充缺失，然后线性预测
+        ：，
         """
         x = x_enc  # (B, L, C)
-        # 这里的x_for_retrieval有维度问题，！= x?
+
         # print("x shape", x.shape)
         # print("x_retrieval", x_for_retrieval.shape)
-        # 测试时用 retrieval 填充
+
         import time
         begin_time = time.time()
         
-        if mode != 'train': # 用重建的表示做预测
+        if mode != 'train':
             if self.args.use_full_retrieval:
-                # Oracle mode: 用完整 x 做 retrieval
+
                 x_recon_repr = self.rt.retrieve_recon(
                     x_for_retrieval, 
                     observed_mask=torch.ones_like(batch_mask),
                     task_name="forecasting"
                 )
             elif self.args.use_no_retrieval:
-                # 测试时也不用检索，直接用缺失的x编码
+
                 x_recon_repr = self.encoder.encode(
                     x, 
                     encoding_window=None
                 )  # (B, L, D)
             else:
-                # Normal mode: 用 masked的 x 做 retrieval
+
                 x_recon_repr = self.rt.retrieve_recon(
                     x, 
                     observed_mask=batch_mask,
                     task_name="forecasting"
                 )  # (B, L, D)
             x_repr = x_recon_repr
-        else: # 训练时用自己的完整表示做预测
+        else:
             x_repr = self.encoder.encode(x, encoding_window=None)  # (B, L, D)
             x_repr = torch.tensor(x_repr).float().to(x.device)
             
@@ -144,7 +144,7 @@ class Model(nn.Module):
 
     def classification(self, x_enc, batch_mask, x_for_retrieval=None, mode='train'):
         """
-        分类任务：用检索得到完整序列表示，接分类头
+        ：，
         """
         x = x_enc  # (B, L, C)
         
@@ -156,32 +156,32 @@ class Model(nn.Module):
                     task_name="classification"
                 )
             elif self.args.use_no_retrieval:
-                # 测试时也不用检索，直接用缺失的x编码
+
                 repr = self.encoder.encode(
                     x, 
                     encoding_window='full_series'
                 )  # (B, D)
-            else: # 测试时用 masked 的 x 做 retrieval
+            else:
                 repr = self.rt.retrieve_recon(
                     x,
                     observed_mask=batch_mask,
                     task_name="classification"
                 )  # (B, D)
         else:
-            # 训练时用完整 x（假设无缺失）编码
+
             repr = self.encoder.encode(
                 x,
                 encoding_window='full_series'
             )
             # repr = torch.tensor(repr).float().to(x.device)  # (B, D)
         
-        # 分类头（需在 __init__ 中定义）
+
         logits = self.classifier(repr)  # (B, num_classes)
         return logits
 
     def anomaly_detection(self, x_enc, batch_mask, x_for_retrieval=None, mode='train'):
         """
-        异常检测：返回重构误差（与原始序列比较）
+        ：（）
         """
         x = x_enc  # (B, L, C)
         
@@ -200,18 +200,18 @@ class Model(nn.Module):
                 )  # (B, L, D)
             x_recon = self.repr_to_raw(repr)  # (B, L, C)
         else:
-            # 训练时：直接重构
+
             x_recon = self.repr_to_raw(
                 self.rt.encoder.encode(x.cpu().numpy(), encoding_window=None)
             )
             x_recon = torch.tensor(x_recon).float().to(x.device)
         
-        # 返回重构序列（用于计算 MSE）
+
         return x_recon
 
     def repr_to_raw(self, repr):
         """
-        将 TS2Vec 表示映射回原始空间 (B, *, D) -> (B, *, C)
+         TS2Vec  (B, *, D) -> (B, *, C)
         """
         if repr.dim() == 3:  # (B, L, D)
             B, L, D = repr.shape
@@ -219,4 +219,4 @@ class Model(nn.Module):
             raw_flat = self.repr_decoder(repr_flat)
             return raw_flat.reshape(B, L, self.channels)
         else:  # (B, D)
-            return self.repr_decoder(repr)  # (B, C)，但分类任务不需要
+            return self.repr_decoder(repr)

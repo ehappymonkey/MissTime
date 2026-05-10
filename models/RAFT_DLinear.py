@@ -98,7 +98,7 @@ class Model(nn.Module):
     def prepare_retrieval(self, train_loader_unshuffled):
         # if self.args.rag_type == 'feature_rag' or self.args.rag_type == 'latent_rag':
         self.rt.prepare_dataset(self.args, train_loader_unshuffled) 
-           # self.rt.load_kb_to_gpu()  # 存储张量移到GPU里。
+
 
 
 

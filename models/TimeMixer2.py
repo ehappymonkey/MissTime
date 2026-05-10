@@ -287,7 +287,7 @@ class Model(nn.Module):
     def __init__(self, configs):
         super(Model, self).__init__()
         self.configs = configs
-        self.args = configs  # ### RAG 增加：为了兼容 RAG 参数 ###
+        self.args = configs
         self.task_name = configs.task_name
         self.seq_len = configs.seq_len
         self.label_len = configs.label_len
@@ -362,7 +362,7 @@ class Model(nn.Module):
             self.projection = nn.Linear(
                 configs.d_model * configs.seq_len, configs.num_class)
 
-        # ### --- RAG 模块初始化 --- ###
+
         self.device = torch.device('cuda:{}'.format(configs.gpu)) if getattr(configs, 'use_gpu', True) else torch.device('cpu')
         if getattr(configs, 'rag_type', 'no_rag') == 'latent_rag':
             self.rt = missRetrieval(
@@ -374,12 +374,12 @@ class Model(nn.Module):
             )
         # ### ----------------------- ###
 
-    # ### --- RAG 数据准备函数 --- ###
+
     def prepare_retrieval(self, train_loader_contra, vali_loader_contra, train_loader_unshuffled):
         if hasattr(self, 'rt'):
-            # 对比学习训练Retrieval Encoder。
+
             self.rt.training_encoder(self.args, train_loader_contra, vali_loader_contra)
-            # Encode训练集的embedding并存储。
+
             self.rt.prepare_dataset(self.args, train_loader_unshuffled) 
     # ### ----------------------- ###
 
@@ -404,7 +404,7 @@ class Model(nn.Module):
             return (out1_list, out2_list)
 
     def __multi_scale_process_inputs(self, x_enc, x_mark_enc):
-        # ... (保留你原来的代码逻辑不变) ...
+
         if self.configs.down_sampling_method == 'max':
             down_pool = torch.nn.MaxPool1d(self.configs.down_sampling_window, return_indices=False)
         elif self.configs.down_sampling_method == 'avg':
@@ -443,9 +443,9 @@ class Model(nn.Module):
 
         return x_enc, x_mark_enc
 
-    def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec, batch_mask, x_full, mode): # ### 增加RAG参数
+    def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec, batch_mask, x_full, mode):
         
-        # ### --- RAG 前向填补逻辑 --- ###
+
         if mode != 'train' and hasattr(self, 'rt'):
             if getattr(self.args, 'rag_type', 'no_rag') == 'latent_rag':
                 _batch_mask = batch_mask.unsqueeze(0).expand(x_enc.shape[0], -1)
@@ -503,7 +503,7 @@ class Model(nn.Module):
         return dec_out
 
     def future_multi_mixing(self, B, enc_out_list, x_list):
-        # ... (保留原来代码) ...
+
         dec_out_list =[]
         if self.channel_independence:
             x_list = x_list[0]
@@ -521,9 +521,9 @@ class Model(nn.Module):
                 dec_out_list.append(dec_out)
         return dec_out_list
 
-    def classification(self, x_enc, x_mark_enc, batch_mask, x_full, mode): # ### 增加RAG参数
+    def classification(self, x_enc, x_mark_enc, batch_mask, x_full, mode):
         
-        # ### --- RAG 前向填补逻辑 --- ###
+
         if mode != 'train' and hasattr(self, 'rt'):
             if getattr(self.args, 'use_full_retrieval', False):
                 full_obs_mask = torch.ones_like(batch_mask).to(batch_mask.device)
@@ -556,9 +556,9 @@ class Model(nn.Module):
         output = self.projection(output)  
         return output
 
-    def anomaly_detection(self, x_enc, batch_mask, x_full, mode): # ### 增加RAG参数
+    def anomaly_detection(self, x_enc, batch_mask, x_full, mode):
         
-        # ### --- RAG 前向填补逻辑 --- ###
+
         x_recon_feat = x_enc
         # if mode != 'train' and hasattr(self, 'rt'):
         #     if getattr(self.args, 'use_full_retrieval', False):
@@ -571,7 +571,7 @@ class Model(nn.Module):
                 
         #     if getattr(self.args, 'rag_type', 'no_rag') != 'no_rag':
         #         x_enc = torch.where(batch_mask.bool().to(x_enc.device), x_enc, x_recon)
-        #         x_recon_feat = x_enc # 保存填补后的特征供外部计算Loss用
+
         # # ### ----------------------- ###
         if mode != 'train' and hasattr(self, 'rt'):
             if getattr(self.args, 'rag_type', 'no_rag') == 'latent_rag':
@@ -605,12 +605,12 @@ class Model(nn.Module):
 
         dec_out = self.normalize_layers[0](dec_out, 'denorm')
         
-        # ### 这里遵循原来RAG模型的习惯，额外返回一个 x_recon_feat 
+
         return dec_out, x_recon_feat
 
-    def imputation(self, x_enc, x_mark_enc, batch_mask, x_full, mode, mask): # ### 增加RAG参数
+    def imputation(self, x_enc, x_mark_enc, batch_mask, x_full, mode, mask):
 
-        # ### --- RAG 前向填补逻辑 --- ###
+
         if mode != 'train' and hasattr(self, 'rt'):
             if getattr(self.args, 'rag_type', 'no_rag') == 'latent_rag':
                 _batch_mask = batch_mask.unsqueeze(0).expand(x_enc.shape[0], -1)
@@ -669,7 +669,7 @@ class Model(nn.Module):
                   (means[:, 0, :].unsqueeze(1).repeat(1, self.seq_len, 1))
         return dec_out
 
-    # ### --- 修改 forward 接口以兼容 RAG 输入参数 --- ###
+
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, batch_mask=None, batch_x_full=None, mode='train', mask=None):
         if self.task_name == 'long_term_forecast' or self.task_name == 'short_term_forecast':
             dec_out = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec, batch_mask, batch_x_full, mode)
@@ -679,7 +679,7 @@ class Model(nn.Module):
             return dec_out  #[B, L, D]
         if self.task_name == 'anomaly_detection':
             dec_out, x_recon_feat = self.anomaly_detection(x_enc, batch_mask, batch_x_full, mode)
-            return dec_out, x_recon_feat  # [B, L, D] (注：为了与之前代码对齐，这里额外返回了x_recon_feat)
+            return dec_out, x_recon_feat
         if self.task_name == 'classification':
             dec_out = self.classification(x_enc, x_mark_enc, batch_mask, batch_x_full, mode)
             return dec_out  #[B, N]

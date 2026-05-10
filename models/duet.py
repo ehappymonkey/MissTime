@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
 
-# 假设以下组件已在环境中定义，或者你需要从原来的DUET文件中import
+
 # from layers.Embed import Linear_extractor_cluster, Mahalanobis_mask
 # from layers.Transformer_EncDec import Encoder, EncoderLayer, AttentionLayer, FullAttention
 
@@ -357,7 +357,7 @@ class Mahalanobis_mask(nn.Module):
 
         # exp_dist = torch.exp(-dist)
         exp_dist = 1 / (dist + 1e-10)
-        # 对角线置零
+
 
         identity_matrices = 1 - torch.eye(exp_dist.shape[-1])
         mask = identity_matrices.repeat(exp_dist.shape[0], 1, 1).to(exp_dist.device)
@@ -396,7 +396,7 @@ class Mahalanobis_mask(nn.Module):
     def forward(self, X):
         p = self.calculate_prob_distance(X)
 
-        # bernoulli中两个通道有关系的概率
+
         sample = self.bernoulli_gumbel_rsample(p)
 
         mask = sample.unsqueeze(1)

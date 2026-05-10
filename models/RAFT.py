@@ -1,4 +1,4 @@
-# 这个RAFT是离线检索的
+
 
 import torch
 import torch.nn as nn
@@ -43,7 +43,7 @@ class Model(nn.Module):
             topm=self.topm,
         )
         
-        self.period_num = self.rt.period_num[-1 * self.n_period:] # [4,2,1] 下采样频率。
+        self.period_num = self.rt.period_num[-1 * self.n_period:]
         
         module_list = [
             nn.Linear(self.pred_len // g, self.pred_len)
@@ -55,7 +55,7 @@ class Model(nn.Module):
         # args
         self.args = configs
 
-    # 调用检索模块生成KB。并生成valid_data和test_data的检索结果！
+
     def prepare_dataset(self, train_data, valid_data, test_data):
         self.rt.prepare_dataset(train_data)
         
@@ -78,7 +78,7 @@ class Model(nn.Module):
         self.retrieval_dict['test'] = test_rt.detach().to(self.device)
 
     def encoder(self, x, index, mode):
-        index = index.to(self.device) # index是s_begin的位置。(当前样本)。
+        index = index.to(self.device)
         
         bsz, seq_len, channels = x.shape
         assert(seq_len == self.seq_len, channels == self.channels)
@@ -88,19 +88,19 @@ class Model(nn.Module):
 
         x_pred_from_x = self.linear_x(x_norm.permute(0, 2, 1)).permute(0, 2, 1) # B, P, C
         
-        pred_from_retrieval = self.retrieval_dict[mode][:, index] # G, B, P=pred_len, C。 G是周期数。
+        pred_from_retrieval = self.retrieval_dict[mode][:, index]
         pred_from_retrieval = pred_from_retrieval.to(self.device)
         
         retrieval_pred_list = []
         
         # Compress repeating dimensions
-        for i, pr in enumerate(pred_from_retrieval): # G, B, seq, C。
+        for i, pr in enumerate(pred_from_retrieval):
             assert((bsz, self.pred_len, channels) == pr.shape)
             g = self.period_num[i]
             pr = pr.reshape(bsz, self.pred_len // g, g, channels)
             pr = pr[:, :, 0, :] # batch, pred_len // g, channel
             
-            pr = self.retrieval_pred[i](pr.permute(0, 2, 1)).permute(0, 2, 1) # 可学习linear， # batch, pred_len // g ->pred_len, channel
+            pr = self.retrieval_pred[i](pr.permute(0, 2, 1)).permute(0, 2, 1)
             pr = pr.reshape(bsz, self.pred_len, self.channels)
             
             retrieval_pred_list.append(pr)

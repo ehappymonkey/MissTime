@@ -549,7 +549,7 @@ class Model(nn.Module):
 
     def imputation(self, x_enc, x_mark_enc, mask):
 
-        if mask is None: # mask 永远是None。？
+        if mask is None:
             mask = torch.ones_like(x_enc).to(x_enc.device)
     
         means = torch.sum(x_enc, dim=1) / torch.sum(mask == 1, dim=1)

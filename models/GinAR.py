@@ -25,7 +25,7 @@ class ginarCell(nn.Module):
         self.GL = nn.Parameter(torch.FloatTensor(num_id, grap_size))
         nn.init.kaiming_uniform_(self.GL)
         self.GL_linear = nn.Linear(grap_size, emb_size, bias=False)
-        # 注意：这里需要确保输入维度和Linear定义匹配，之前分析是匹配的
+
         self.GL_linear2 = nn.Linear(emb_size * 2, emb_size * 2, bias=False)
 
     def forward(self, x, ct, graph_data):
@@ -42,31 +42,31 @@ class ginarCell(nn.Module):
         ### Adaptive graph
         B, _, _ = x.shape
         GL_embed = self.GL_linear(self.GL.unsqueeze(0).expand(B, -1, -1))
-        # 拼接 x.T [B, N, emb] 和 GL_embed [B, N, emb] -> [B, N, 2*emb]
+
         GL_embed = self.GL_linear2(torch.cat([x.transpose(-2, -1), GL_embed], dim=-1))
         graph_learn = torch.eye(self.num_id).to(x.device) + F.softmax(F.relu(GL_embed @ GL_embed.transpose(-2, -1)), dim=-1)
 
         ### GinAR cell
-        # 这里的计算没问题
+
         term1 = self.linear1(x) # Conv1d over N
         term1_do = self.dropout(term1)
         
-        # 核心修复 1: 确保 ft 和 rt 使用 Sigmoid 激活函数
-        # 原始代码使用 GELU 会导致数值爆炸
+
+
         
         # Update Gate
         ft_input = self.layernorm(self.dropout(self.linear2(x)) @ graph_learn + self.linear2(self.dropout(self.linear2(x)) @ graph_data1) @ graph_data2)
-        ft = torch.sigmoid(ft_input) # <--- 修改这里：GELU -> Sigmoid
+        ft = torch.sigmoid(ft_input)
 
         # Reset Gate
         rt_input = self.layernorm(self.dropout(self.linear2(x)) @ graph_learn + self.linear2(self.dropout(self.linear2(x)) @ graph_data1) @ graph_data2)
-        rt = torch.sigmoid(rt_input) # <--- 修改这里：GELU -> Sigmoid
+        rt = torch.sigmoid(rt_input)
 
         # Cell Content
         x_new = self.layernorm(term1_do @ graph_learn + self.linear1(term1_do @ graph_data1) @ graph_data2)
         
-        # GRU 更新公式: ft * ct + (1-ft) * x_new
-        # 只有当 ft 在 [0,1] 之间时，这才是插值，否则就是发散
+
+
         ct = ft * ct + x_new - ft * x_new
         ht = rt * F.elu(ct) + x - rt * x
         
@@ -74,7 +74,7 @@ class ginarCell(nn.Module):
 
     @staticmethod
     def calculate_laplacian_with_self_loop(matrix):
-        # 核心修复 2: 增加 epsilon 防止除以 0
+
         row_sum = matrix.sum(1) + 1e-6 
         d_inv_sqrt = torch.pow(row_sum, -0.5).flatten()
         d_inv_sqrt[torch.isinf(d_inv_sqrt)] = 0.0
@@ -86,7 +86,7 @@ class ginarCell(nn.Module):
 
 
 class InterpositionAttention(nn.Module):
-    # 这部分代码通常没问题，保持原样即可
+
     def __init__(self, in_c, out_c, num_id, grap_size, dropout):
         super(InterpositionAttention, self).__init__()
         self.in_c = in_c
@@ -143,8 +143,8 @@ class GinAR(nn.Module):
         self.output = nn.Conv2d(in_channels=out_len, out_channels=out_len, kernel_size=1)
 
     def forward(self, history_data):
-        # 核心修复 3: 处理输入中的 NaN (防止脏数据污染)
-        # 如果你的数据是 Imputation 任务，输入可能包含 NaN，Conv1d 会直接输出 NaN
+
+
         history_data = torch.nan_to_num(history_data, nan=0.0)
         
         x = history_data.unsqueeze(1) # [B, 1, L, N]
@@ -190,7 +190,7 @@ class GinAR(nn.Module):
 if __name__ == '__main__':
     model = GinAR(input_len=96, num_id=7, out_len=96, in_size=1, 
               emb_size=32, grap_size=8, layer_num=2, dropout=0.1, 
-              adj_mx=None) # <--- 这里
+              adj_mx=None)
 
     input_data = torch.randn(32, 96, 7)
     output = model(input_data)

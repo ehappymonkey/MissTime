@@ -106,7 +106,7 @@ def masked_mae_cal(inputs, target, mask):
 class SAITS(nn.Module):
     def __init__(
         self,
-        configs, # 先注入TimesNet模型参数。
+        configs,
         n_groups,
         n_group_inner_layers,
         d_time,
@@ -297,10 +297,10 @@ class SAITS(nn.Module):
         X_tilde_3 = (1 - combining_weights) * X_tilde_2 + combining_weights * X_tilde_1
         # replace non-missing part with original data
         X_c = masks * X + (1 - masks) * X_tilde_3
-        return X_c, [X_tilde_1, X_tilde_2, X_tilde_3] # X_c为补全后的输入，X1-3位不同block输出。
+        return X_c, [X_tilde_1, X_tilde_2, X_tilde_3]
 
 
-    def anomaly_detection(self, x_enc): # 输入imputed data
+    def anomaly_detection(self, x_enc):
         # Normalization from Non-stationary Transformer
         means = x_enc.mean(1, keepdim=True).detach()
         x_enc = x_enc.sub(means)
@@ -325,7 +325,7 @@ class SAITS(nn.Module):
                       1, self.pred_len + self.seq_len, 1)))
         return dec_out
     
-    def classification(self, x_enc): # 输入imputed data
+    def classification(self, x_enc):
 
         # embedding
         enc_out = self.enc_embedding(x_enc, None)  # [B,T,C]
@@ -345,7 +345,7 @@ class SAITS(nn.Module):
         return output
 
 
-    def forecast(self, x_enc, ): # 输入imputed data
+    def forecast(self, x_enc, ):
         # Normalization from Non-stationary Transformer
         means = x_enc.mean(1, keepdim=True).detach()
         x_enc = x_enc.sub(means)
@@ -392,9 +392,9 @@ class SAITS(nn.Module):
             imputation_MAE = torch.tensor(0.0)
 
         if self.args.task_name == 'anomaly_detection':
-            output = self.anomaly_detection(imputed_data) # output是重建的x。
+            output = self.anomaly_detection(imputed_data)
         elif self.args.task_name == 'classification':
-            output = self.classification(imputed_data) # 分类结果。
+            output = self.classification(imputed_data)
         elif self.task_name == 'long_term_forecast' or self.task_name == 'short_term_forecast':
             output = self.forecast(imputed_data)
         elif self.args.task_name == 'imputation':

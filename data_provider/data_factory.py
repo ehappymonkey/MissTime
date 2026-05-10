@@ -25,20 +25,20 @@ data_dict = {
 }
 
 
-# 在这里batchsize的时候进行每个batch的变量缺失处理。
+
 def collate_fn_with_batch_mask(batch, missing_rate=0.25):
-    # 提取各字段
+
     indices = torch.tensor([b[0] for b in batch], dtype=torch.long) 
     xs = torch.stack([torch.tensor(b[1], dtype=torch.float32) for b in batch])
     ys = torch.stack([torch.tensor(b[2], dtype=torch.float32) for b in batch])
     x_marks = torch.stack([torch.tensor(b[3], dtype=torch.float32) for b in batch])
     y_marks = torch.stack([torch.tensor(b[4], dtype=torch.float32) for b in batch])
 
-    # 生成 batch-level mask
+
     C = xs.shape[2]
     while True:
         batch_mask = torch.rand(C) > missing_rate
-        if batch_mask.any():  # 至少有一个 True
+        if batch_mask.any():
             break
     batch_mask = batch_mask.float() # .unsqueeze(0).unsqueeze(0)  # (1, 1, C)
     xs_masked = xs * batch_mask
@@ -46,17 +46,17 @@ def collate_fn_with_batch_mask(batch, missing_rate=0.25):
     return indices, xs_masked, ys, x_marks, y_marks, batch_mask, xs 
 
 def collate_fn_with_batch_mask_PEMS(batch, missing_rate=0.25):
-    # 提取各字段
+
     xs = torch.stack([torch.tensor(b[0], dtype=torch.float32) for b in batch])
     ys = torch.stack([torch.tensor(b[1], dtype=torch.float32) for b in batch])
     x_marks = torch.stack([torch.tensor(b[2], dtype=torch.float32) for b in batch])
     y_marks = torch.stack([torch.tensor(b[3], dtype=torch.float32) for b in batch])
 
-    # 生成 batch-level mask
+
     C = xs.shape[2]
     while True:
         batch_mask = torch.rand(C) > missing_rate
-        if batch_mask.any():  # 至少有一个 True
+        if batch_mask.any():
             break
     batch_mask = batch_mask.float() # .unsqueeze(0).unsqueeze(0)  # (1, 1, C)
     xs_masked = xs * batch_mask
@@ -66,7 +66,7 @@ def collate_fn_with_batch_mask_PEMS(batch, missing_rate=0.25):
 def collate_fn_with_batch_mask_classification(batch, max_len=None, missing_rate=0.25):
     features, labels = zip(*batch)
     
-    # 1. 处理变长序列（同原始 collate_fn）
+
     lengths = [X.shape[0] for X in features]
     if max_len is None:
         max_len = max(lengths)
@@ -79,11 +79,11 @@ def collate_fn_with_batch_mask_classification(batch, max_len=None, missing_rate=
     labels = torch.stack(labels).squeeze(-1)
     padding_masks = padding_mask(torch.tensor(lengths), max_len)  # (B, L)
 
-    # 2. 引入变量级缺失（仅在非-padding 区域）
+
     C = xs_full.shape[2]
     while True:
         batch_mask = torch.rand(C) > missing_rate
-        if batch_mask.any():  # 至少有一个 True
+        if batch_mask.any():
             break
     xs_masked = xs_full * batch_mask.float().unsqueeze(0).unsqueeze(0)  # (B, L, C)
     batch_mask = batch_mask.float()
@@ -100,21 +100,21 @@ def collate_fn_anomaly_detection(batch, missing_rate=0.25):
     C = xs_full.shape[2]
     while True:
         batch_mask = torch.rand(C) > missing_rate
-        if batch_mask.any():  # 至少有一个 True
+        if batch_mask.any():
             break
     xs_masked = xs_full * batch_mask.float().unsqueeze(0).unsqueeze(0)  # (B, L, C)
     batch_mask = batch_mask.float() 
     return xs_masked, xs_full, ys, batch_mask
 
-def collate_fn_imputation(batch, missing_rate=0.25): # 和预测数据集相同
-    # 提取各字段
+def collate_fn_imputation(batch, missing_rate=0.25):
+
     indices = torch.tensor([b[0] for b in batch], dtype=torch.long) 
     xs = torch.stack([torch.tensor(b[1], dtype=torch.float32) for b in batch])
     ys = torch.stack([torch.tensor(b[2], dtype=torch.float32) for b in batch])
     x_marks = torch.stack([torch.tensor(b[3], dtype=torch.float32) for b in batch])
     y_marks = torch.stack([torch.tensor(b[4], dtype=torch.float32) for b in batch])
 
-    # 生成 batch-level mask
+
     C = xs.shape[2]
     while True:
         batch_mask = torch.rand(C) > missing_rate
@@ -135,12 +135,12 @@ def data_provider(args, flag, shuffle_flag=None, batch_size = None):
     if shuffle_flag == None:
         shuffle_flag = False if (flag == 'test' or flag == 'TEST') else True
     else:
-        shuffle_flag = shuffle_flag # 建立KB时候需要无shuffle的train_loader。
+        shuffle_flag = shuffle_flag
     drop_last = False
     if batch_size ==None:
         batch_size = args.batch_size
     else:
-        batch_size = batch_size # 训练Contrastive Encoder用大Batch。
+        batch_size = batch_size
     freq = args.freq
 
     if any(keyword in args.model_id for keyword in ['PEMS']):
@@ -158,11 +158,11 @@ def data_provider(args, flag, shuffle_flag=None, batch_size = None):
         )
         print(flag, len(data_set))
 
-        # 在验证/测试集上进行变量缺失模拟。
+
         data_loader = DataLoader(
             data_set,
             batch_size=batch_size,
-            collate_fn=lambda b: collate_fn_with_batch_mask_PEMS(b, args.mask_ratio), # 训练测试都设置缺失数据。# if flag != 'train' else collate_fn_with_batch_mask(b, 0), # 训练集不进行mask。
+            collate_fn=lambda b: collate_fn_with_batch_mask_PEMS(b, args.mask_ratio),
             shuffle=shuffle_flag,
             num_workers=args.num_workers,
             drop_last=drop_last)
@@ -221,11 +221,11 @@ def data_provider(args, flag, shuffle_flag=None, batch_size = None):
         )
         print(flag, len(data_set))
 
-        # 在验证/测试集上进行变量缺失模拟。
+
         data_loader = DataLoader(
             data_set,
             batch_size=batch_size,
-            collate_fn=lambda b: collate_fn_with_batch_mask(b, args.mask_ratio), # 训练测试都设置缺失数据。# if flag != 'train' else collate_fn_with_batch_mask(b, 0), # 训练集不进行mask。
+            collate_fn=lambda b: collate_fn_with_batch_mask(b, args.mask_ratio),
             shuffle=shuffle_flag,
             num_workers=args.num_workers,
             drop_last=drop_last)

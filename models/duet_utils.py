@@ -42,7 +42,7 @@ class RevIN(nn.Module):
         else:
             self.mean = torch.mean(
                 x, dim=dim2reduce, keepdim=True
-            ).detach()  # 沿时间维度求平均，得到各通道的时间均值
+            ).detach()
         self.stdev = torch.sqrt(
             torch.var(x, dim=dim2reduce, keepdim=True, unbiased=False) + self.eps
         ).detach()

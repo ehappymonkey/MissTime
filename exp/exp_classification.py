@@ -34,9 +34,9 @@ class Exp_Classification(Exp_Basic):
         if self.args.model == 'saits':
             saits_config = {
                 "input_with_mask": True,
-                "MIT": True,  # 训练时设为 True
+                "MIT": True,
                 "param_sharing_strategy": "inner_group",
-                "device": self.device, # 或者是 'cuda'
+                "device": self.device,
                 "diagonal_attention_mask": True
             }
             model = SAITS(configs=self.args, n_groups=2, n_group_inner_layers=1, d_time=self.args.seq_len, d_feature=self.args.enc_in, d_model=self.args.d_model, d_inner=self.args.d_ff, n_head=self.args.n_heads,d_k=64, d_v=64, dropout=self.args.dropout, **saits_config)
@@ -110,7 +110,7 @@ class Exp_Classification(Exp_Basic):
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag='TRAIN')
-        vali_data, vali_loader = self._get_data(flag='TRAIN') # 验证数据不mask。只有测试数据缺失。
+        vali_data, vali_loader = self._get_data(flag='TRAIN')
         test_data, test_loader = self._get_data(flag='TEST')
 
         # print(test_data[0][0])
@@ -163,7 +163,7 @@ class Exp_Classification(Exp_Basic):
                     "X_holdout": batch_x_full 
                     }
                     outputs = self.model(inputs, stage='train') 
-                    loss_impute = outputs['reconstruction_loss'] + outputs['imputation_loss'] # 相当于直接在full data上做个loss嘛。
+                    loss_impute = outputs['reconstruction_loss'] + outputs['imputation_loss']
                     output_logits = outputs['output']
                     loss_classify = criterion(output_logits, label.long().squeeze(-1))
                     loss = loss_impute + loss_classify
@@ -273,10 +273,10 @@ class Exp_Classification(Exp_Basic):
 
         probs = probs.cpu().numpy()
         if num_classes == 2:
-            # 二分类：用正类概率
+
             auc = roc_auc_score(trues, probs[:, 1])
         else:
-            # 多分类：用 OvR 策略 + macro 平均
+
             auc = roc_auc_score(trues, probs, multi_class='ovr', average='macro')
         print(f"AUC: {auc:.4f}")
 
@@ -289,7 +289,7 @@ class Exp_Classification(Exp_Basic):
         file_name='result_classification.txt'
         f = open(os.path.join(folder_path,file_name), 'a')
         # f.write(setting + "  \n")
-        current_time = datetime.now().strftime("%m-%d %H:%M")  # 格式: 06-30 14:25
+        current_time = datetime.now().strftime("%m-%d %H:%M")
         f.write(f"{self.args.model}_{self.args.rag_type}_{self.args.retrieve_encoder} missing: ({self.args.mask_ratio}) ({current_time})\n")
         f.write('accuracy:{}'.format(accuracy))
         f.write('AUC:{}'.format(auc))

@@ -27,9 +27,9 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         if self.args.model == 'saits':
             saits_config = {
                 "input_with_mask": True,
-                "MIT": True,  # 训练时设为 True
+                "MIT": True,
                 "param_sharing_strategy": "inner_group",
-                "device": self.device, # 或者是 'cuda'
+                "device": self.device,
                 "diagonal_attention_mask": True
             }
             model = SAITS(configs=self.args, n_groups=2, n_group_inner_layers=1, d_time=self.args.seq_len, d_feature=self.args.enc_in, d_model=self.args.d_model, d_inner=self.args.d_ff, n_head=self.args.n_heads,d_k=64, d_v=64, dropout=self.args.dropout, **saits_config)
@@ -50,12 +50,12 @@ class Exp_Long_Term_Forecast(Exp_Basic):
             _, train_loader_unshuffled = self._get_data(flag='train', shuffle_flag=False)
             _, vali_loader_contra = self._get_data(flag='train', shuffle_flag=True, batch_size=self.args.contrastive_batch)
             # TimesNet
-            model.prepare_retrieval(train_loader_contra, vali_loader_contra, train_loader_unshuffled) # 前两个用于训练Encoder，后一个建立raw_data和embedding。
+            model.prepare_retrieval(train_loader_contra, vali_loader_contra, train_loader_unshuffled)
 
 
         # if self.args.rag_type == 'feature_rag' or self.args.rag_type == 'latent_rag':
         #     train_data, train_loader = self._get_data(flag='train')
-        #     if self.args.retrieve_encoder == 'iTransformer' or self.args.retrieve_encoder == 'Typology': # 训练Encoder并建立KB。
+
         #         _, vali_loader = self._get_data(flag='val')
         #         model.prepare_dataset(train_data, train_loader, vali_loader)
         #     else:
@@ -207,15 +207,15 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                     "X_holdout": batch_x_full 
                     }
                     outputs = self.model(inputs, stage='train')
-                    loss_impute = outputs['reconstruction_loss'] + outputs['imputation_loss'] # 相当于直接在full data上做个loss嘛。
+                    loss_impute = outputs['reconstruction_loss'] + outputs['imputation_loss']
                     outputs = outputs['output']
                     f_dim = -1 if self.args.features == 'MS' else 0
                     outputs = outputs[:, -self.args.pred_len:, f_dim:]
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                     loss_forecast = criterion(outputs, batch_y)
                     loss = self.args.weight*loss_impute+loss_forecast
-                elif self.args.model == 'GinAR' or self.args.model == 'MSGNet': # 基于MSGNet+Robust Training修改。
-                    # batch_x不更改为full, 训练时模拟缺失。
+                elif self.args.model == 'GinAR' or self.args.model == 'MSGNet':
+
                     if self.args.use_amp:
                         with torch.cuda.amp.autocast():
                             outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
@@ -262,7 +262,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                     loss = criterion(outputs, batch_y)
                 elif self.args.model == 'RAFT':
-                    batch_x = batch_x_full # TimesNet训练时候用完数据训练，推理用缺失的。
+                    batch_x = batch_x_full
                     if self.args.use_amp:
                         with torch.cuda.amp.autocast():
                             outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark, batch_mask, batch_x_full, mode='train')
@@ -273,7 +273,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                     loss = criterion(outputs, batch_y.half())
                 else: # TimesNet, RAFT, TSRAG
-                    batch_x = batch_x_full # TimesNet训练时候用完数据训练，推理用缺失的。
+                    batch_x = batch_x_full
                     if self.args.use_amp:
                         with torch.cuda.amp.autocast():
                             outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark, batch_mask, batch_x_full, mode='train')
@@ -469,7 +469,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         file_name = "result_long_term_forecast.txt"
         f = open(os.path.join(folder_path,file_name), 'a')
         # f.write(setting + "  \n")
-        current_time = datetime.now().strftime("%m-%d %H:%M")  # 格式: 06-30 14:25
+        current_time = datetime.now().strftime("%m-%d %H:%M")
         f.write(f"{self.args.model}_{self.args.rag_type}_{self.args.retrieve_encoder}_{self.args.contrastive_loss}_missing: ({self.args.mask_ratio}) ({current_time})\n")
         f.write('mse:{}, mae:{}, dtw:{}'.format(mse, mae, dtw))
         f.write('\n')

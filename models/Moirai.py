@@ -32,10 +32,10 @@ class Model(nn.Module):
         self.pred_len = configs.pred_len
 
     def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
-        # feature-based RAG 补全缺失的通道。
-        if True: # Moirai Zero-shot没有training phase
+
+        if True:
             if self.args.rag_type == 'latent_rag':
-                # Normal mode: 用 masked x 的observed variables检索
+
                 batch_mask = batch_mask.unsqueeze(0).expand(x_enc.shape[0], -1)
                 if self.args.rag_strategy == 'channels':
                     x_recon = self.rt.retrieve_recon(x_enc, x_mark_enc, batch_mask) # batch, seq_len, channel
@@ -43,7 +43,7 @@ class Model(nn.Module):
                     x_recon = self.rt.retrieve_recon_whole(x_enc, x_mark_enc, batch_mask)
                 x_enc = torch.where(batch_mask.unsqueeze(1).bool().to(x_enc.device), x_enc, x_recon)
             elif self.args.rag_type == 'no_rag':
-                # 测试时也不用检索，直接用缺失的x编码
+
                 x_recon = x_enc   
 
         outputs = []

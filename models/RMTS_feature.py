@@ -1,5 +1,5 @@
-# 使用available channels在线检索。
-# 配合onlineRetrieval使用，目前效果不如不检索的Dlinear。
+
+
 
 import torch
 import torch.nn as nn
@@ -51,7 +51,7 @@ class Model(nn.Module):
         )
         
         # module_list = [
-        #     nn.Linear(self.seq_len // g, self.seq_len) # 这个改成输入长度的seq_len。
+
         #     for g in self.period_num
         # ]
         # self.retrieval_recon = nn.ModuleList(module_list)
@@ -66,30 +66,30 @@ class Model(nn.Module):
 
 
 
-    # 仅调用检索模块生成train_data的数据库建立！
+
     def prepare_dataset(self, train_data, task_name=None):
-        self.rt.prepare_dataset(train_data, task_name) # rt里得到train_data_all_mg。
+        self.rt.prepare_dataset(train_data, task_name)
         
 
-    # RAFT 在这里训练时也是用了检索的。
-    # 按照RAG的思路，理应只在valid/test时用检索，根据缺失情况补全x。
+
+
     def encoder(self, x, index, batch_mask, x_full, mode):
-        # index = index.to(self.device) # index是s_begin的位置。(当前样本)。
+
         
         bsz, seq_len, channels = x.shape
         # assert(seq_len == self.seq_len, channels == self.channels)
 
 
-        # 用x做检索，得到补全后的x。
+
         # x_recon = self.rt.retrieve_recon(x, index, observed_mask=batch_mask, train=mode) # G, batch, seq_len, channel
         
         if mode != 'train':
             if self.args.use_full_retrieval:
-                # Oracle mode: 用完整 x 检索
+
                 full_obs_mask = torch.ones_like(batch_mask).to(batch_mask.device)  # (C,)
                 x_recon = self.rt.retrieve_recon(x_full, observed_mask=full_obs_mask)
             else:
-                # Normal mode: 用 masked x 的observed variables检索
+
                 x_recon = self.rt.retrieve_recon(x, observed_mask=batch_mask) # G, batch, seq_len, channel
             x = torch.where(batch_mask.bool().to(x.device), x, x_recon)
 
@@ -97,7 +97,7 @@ class Model(nn.Module):
         x_norm = x - x_offset
         x_pred_from_x = self.linear_x(x_norm.permute(0, 2, 1)).permute(0, 2, 1) # B, P, C
          
-        pred = x_pred_from_x   # 补全后的x进行的线性预测。
+        pred = x_pred_from_x
         pred = pred + x_offset
         
         return pred

@@ -122,10 +122,10 @@ class Model(nn.Module):
                                   configs.n_heads, configs.e_layers, self.top_p, configs.dropout, self.seq_len * self.n_vars // self.patch_len)
         
         if self.task_name == 'imputation':
-            # 插补任务：重建整个输入序列
+
             self.head = nn.Linear(self.dim * self.num_patches, self.seq_len)
         else:
-            # 预测任务：预测未来 pred_len
+
             self.head = nn.Linear(self.dim * self.num_patches, self.pred_len)
 
    
@@ -165,7 +165,7 @@ class Model(nn.Module):
 
 
         if self.task_name == 'imputation':
-            # 重建整个输入序列 (T = seq_len)
+
             x = self.head(x.reshape(-1, self.n_vars, self.num_patches, self.dim).flatten(start_dim=-2))  # [B, C, T]
             x = x.permute(0, 2, 1)  # [B, T, C]
         else: 

@@ -160,8 +160,8 @@ if __name__ == '__main__':
 
     # Missing Variables
     parser.add_argument('--mask_ratio', type=float, default=0.2, help='mask ratio')
-    parser.add_argument('--use_full_retrieval', action='store_true')  # 输入使用full_retrieval否则obs_retrieval。
-    # parser.add_argument('--use_no_retrieval', action='store_true')  # 测试时候直接使用缺失变量预测。
+    parser.add_argument('--use_full_retrieval', action='store_true')
+
     # parser.add_argument('--use_retrieval', action='store_true') 
     # parser.add_argument('--use_latent_retrieval', action='store_true') 
     parser.add_argument(

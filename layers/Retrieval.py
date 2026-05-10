@@ -41,7 +41,7 @@ class RetrievalTool():
         self.with_dec = with_dec
         self.return_key = return_key
         
-    # 建立KB
+
     def prepare_dataset(self, train_data):
         train_data_all = []
         y_data_all = []
@@ -53,7 +53,7 @@ class RetrievalTool():
             if self.with_dec:
                 y_data_all.append(td[2][-(train_data.pred_len + train_data.label_len):])
             else:
-                y_data_all.append(td[2][-train_data.pred_len:]) # 定义y为x的预测部分。
+                y_data_all.append(td[2][-train_data.pred_len:])
             
         self.train_data_all = torch.tensor(np.stack(train_data_all, axis=0)).float()
         self.train_data_all_mg, _ = self.decompose_mg(self.train_data_all)
@@ -112,9 +112,9 @@ class RetrievalTool():
         
         return sim
         
-    # 检索并计算检索预测。
+
     def retrieve(self, x, index, train=True):
-        index = index.to(x.device) # 是经过batch的数据索引。来自data_loader中get_item返回的index。
+        index = index.to(x.device)
         
         bsz, seq_len, channels = x.shape
         assert(seq_len == self.seq_len, channels == self.channels)
@@ -122,11 +122,11 @@ class RetrievalTool():
         x_mg, mg_offset = self.decompose_mg(x) # G, B, S, C
 
         sim = self.periodic_batch_corr(
-            self.train_data_all_mg.flatten(start_dim=2), # G, T, S * C。展平比较每个channel和sequence。
+            self.train_data_all_mg.flatten(start_dim=2),
             x_mg.flatten(start_dim=2), # G, B, S * C
         ) # G, B, T
             
-        # 预防数据泄露
+
         if train:
             sliding_index = torch.arange(2 * (self.seq_len + self.pred_len) - 1).to(x.device)
             sliding_index = sliding_index.unsqueeze(dim=0).repeat(len(index), 1)
@@ -141,9 +141,9 @@ class RetrievalTool():
             
             sim = sim.masked_fill_(self_mask.bool(), float('-inf')) # G, B, T
 
-        sim = sim.reshape(self.n_period * bsz, self.n_train) # G X B, num_train_samples KB中每个样本的相似度。
+        sim = sim.reshape(self.n_period * bsz, self.n_train)
                 
-        topm_index = torch.topk(sim, self.topm, dim=1).indices # Top-M个相似索引
+        topm_index = torch.topk(sim, self.topm, dim=1).indices
         ranking_sim = torch.ones_like(sim) * float('-inf')
         
         rows = torch.arange(sim.size(0)).unsqueeze(-1).to(sim.device)
@@ -154,7 +154,7 @@ class RetrievalTool():
 
         data_len, seq_len, channels = self.train_data_all.shape
             
-        ranking_prob = F.softmax(ranking_sim / self.temperature, dim=2)  # Top-M的预测加权做出检索预测。
+        ranking_prob = F.softmax(ranking_sim / self.temperature, dim=2)
         ranking_prob = ranking_prob.detach().cpu() # G, B, T
         
         y_data_all = self.y_data_all_mg.flatten(start_dim=2) # G, T, Seq_len * C

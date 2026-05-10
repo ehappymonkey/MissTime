@@ -58,13 +58,13 @@ class TS2Vec:
     def __init__(
         self,
         input_dims,
-        output_dims=320, # 输出representation维度。
+        output_dims=320,
         hidden_dims=64,
         depth=10,
         device='cuda',
         lr=0.001,
-        batch_size=16, # 换成我们的batch_size。
-        max_train_length=None, # 3000。
+        batch_size=16,
+        max_train_length=None,
         temporal_unit=0,
         after_iter_callback=None,
         after_epoch_callback=None
@@ -206,7 +206,7 @@ class TS2Vec:
     
 
     def _eval_with_pooling(self, x, mask=None, slicing=None, encoding_window=None):
-        input_device = x.device  # 记录输入设备
+        input_device = x.device
         out = self.net(x.to(self.device, non_blocking=True), mask)
         if encoding_window == 'full_series':
             if slicing is not None:
@@ -248,7 +248,7 @@ class TS2Vec:
             if slicing is not None:
                 out = out[:, slicing]
                 
-        return out.to(input_device)  # 保持输入设备（GPU 或 CPU）
+        return out.to(input_device)
 
     
     def encode(self, data, mask=None, encoding_window=None, causal=False, 
@@ -262,9 +262,9 @@ class TS2Vec:
         '''
         assert self.net is not None, 'please train or load a net first'
         
-        # === 处理输入类型 ===
+
         if torch.is_tensor(data):
-            # 输入是 torch.Tensor
+
             assert data.ndim == 3 and data.dtype == torch.float32, \
                 "Tensor input must be float32 with shape (B, L, C)"
             input_is_tensor = True
@@ -272,7 +272,7 @@ class TS2Vec:
             n_samples, ts_l, _ = data.shape
             tensor_data = data
         else:
-            # 输入是 numpy.ndarray
+
             assert data.ndim == 3, "Numpy input must be 3D"
             input_is_tensor = False
             device = self.device
@@ -357,11 +357,11 @@ class TS2Vec:
             
         self.net.train(org_training)
         
-        # === 根据输入类型决定返回类型 ===
+
         if input_is_tensor:
-            return final_output  # 保持 torch.Tensor（设备与输入一致）
+            return final_output
         else:
-            return final_output.cpu().numpy()  # 保持向后兼容
+            return final_output.cpu().numpy()
 
 
     def _eval_with_pooling_cpu(self, x, mask=None, slicing=None, encoding_window=None):
