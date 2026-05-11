@@ -10,7 +10,7 @@ MissTime is a unified framework for time-series learning under **missing variabl
 - Classification (UEA)
 - Anomaly detection
 
-The framework integrates multiple backbones (e.g., `TimesNet`, `TimeMixer`, `iTransformer`, `RAFT`, `MSGNet`, `TimeFilter`) and retrieval modes (`no_rag`, `feature_rag`, `latent_rag`).
+The framework integrates multiple backbones (e.g., `TimesNet`, `TimeMixer`, `iTransformer`) and retrieval modes (`no_rag`, `feature_rag`, `latent_rag`).
 
 ---
 
