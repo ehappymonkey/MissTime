@@ -64,6 +64,18 @@ Some optional models may require additional third-party packages.
 
 This project uses datasets from the **Time Series Library** ecosystem.
 
+The datasets used by the provided scripts are also bundled as a GitHub Release asset. From the repository root, download and extract them with:
+
+```bash
+bash scripts/download_datasets.sh
+```
+
+Manual download: [misstime-datasets-v1.tar.gz](https://github.com/ehappymonkey/MissTime/releases/download/datasets-v1/misstime-datasets-v1.tar.gz)
+
+SHA-256: `3f66505ae41d768f220be9d7a39e7a49c9c7632df2018adc3c7c14d8252779a1`
+
+The archive extracts into `./dataset/` and includes ETT-small, electricity, weather, PEMS04, SelfRegulationSCP1, and UWaveGestureLibrary.
+
 - Time Series Library (GitHub): [https://github.com/thuml/Time-Series-Library](https://github.com/thuml/Time-Series-Library)
 - Hugging Face dataset repo used by loaders: `thuml/Time-Series-Library`
 
@@ -241,6 +253,7 @@ You can run the corresponding `.sh` scripts directly for dataset/model-specific 
 - `--model`: backbone model name
 - `--rag_type`: `no_rag | feature_rag | latent_rag`
 - `--mask_ratio`: missing-variable ratio used in batch-level masking
+- `--mining_temp`: hard-negative mining temperature; smaller values emphasize harder negatives (default: `0.1`)
 - `--root_path`, `--data_path`: dataset location
 - `--gpu`: GPU id
 

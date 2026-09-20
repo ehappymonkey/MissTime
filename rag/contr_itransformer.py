@@ -36,6 +36,7 @@ class iTransformerContrastive(nn.Module):
         #configs.d_model = 512
         self.d_model = configs.latent_dim
         self.temperature = configs.temperature if hasattr(configs, 'temperature') else 0.07
+        self.mining_temp = configs.mining_temp if hasattr(configs, 'mining_temp') else 0.1
         
         # 1. Inverted Embedding: [B, L, C] -> [B, C, D]
 
@@ -117,7 +118,7 @@ class iTransformerContrastive(nn.Module):
         
         return loss
     
-    def compute_hard_negative_loss(self, z_partial, z_complete, temp=0.07, mining_temp=0.1):
+    def compute_hard_negative_loss(self, z_partial, z_complete, temp=0.07, mining_temp=None):
         """
          Flatten (System State)  Hard Negative Mining 
         
@@ -126,6 +127,9 @@ class iTransformerContrastive(nn.Module):
             z_complete: [B, C, D] or [B, C*D]
         """
         B = z_partial.shape[0]
+        mining_temp = self.mining_temp if mining_temp is None else mining_temp
+        if mining_temp <= 0:
+            raise ValueError(f"mining_temp must be positive, got {mining_temp}")
         
 
         z_p_flat = z_partial.view(B, -1)     # [B, C*D]

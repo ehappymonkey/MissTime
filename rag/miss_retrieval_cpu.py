@@ -31,7 +31,8 @@ class missRetrieval():
         model = iTransformerContrastive(args, self.device) 
         params = sum(p.numel() * p.element_size() for p in model.parameters())
         print(f"Total parameters of encoder: {params / (1024 ** 2):.2f} MB")
-        path = f"./pretrained_encoder/{args.task_name}/{args.data}/{args.retrieve_encoder}_{args.contrastive_loss}_{args.mask_ratio}_{model.d_model}_checkpoints.pt"
+        mining_temp = getattr(args, 'mining_temp', 0.1)
+        path = f"./pretrained_encoder/{args.task_name}/{args.data}/{args.retrieve_encoder}_{args.contrastive_loss}_mt{mining_temp:g}_{args.mask_ratio}_{model.d_model}_checkpoints.pt"
 
         if os.path.exists(path):
             print(f"Loading pretrained encoder from {path}")

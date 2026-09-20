@@ -49,7 +49,8 @@ class missRetrieval():
             # args.dim_x_mark = dim_x_mark
             args.dim_x_mark = 0
         model = iTransformerContrastive(args, self.device) 
-        path = f"./pretrained_encoder/{args.task_name}/{args.data}/{args.retrieve_encoder}_{args.contrastive_loss}_{args.mask_ratio}_{model.d_model}_checkpoints.pt"
+        mining_temp = getattr(args, 'mining_temp', 0.1)
+        path = f"./pretrained_encoder/{args.task_name}/{args.data}/{args.retrieve_encoder}_{args.contrastive_loss}_mt{mining_temp:g}_{args.mask_ratio}_{model.d_model}_checkpoints.pt"
 
         if os.path.exists(path):
             print(f"Loading pretrained encoder from {path}")
@@ -80,12 +81,14 @@ class missRetrieval():
 
         cache_dir = f"./latentKB/{task_name}/{dataset_name}"
         os.makedirs(cache_dir, exist_ok=True)
+        mining_temp = getattr(args, 'mining_temp', 0.1)
+        encoder_tag = f"{args.retrieve_encoder}_{args.contrastive_loss}_mt{mining_temp:g}_{args.mask_ratio}_{D}"
         
 
 
-        embed_path = os.path.join(cache_dir, f"kb_embed_{args.retrieve_encoder}_{args.mask_ratio}_{D}.dat")
+        embed_path = os.path.join(cache_dir, f"kb_embed_{encoder_tag}.dat")
 
-        raw_path = os.path.join(cache_dir, f"kb_raw_data_{args.retrieve_encoder}_{args.mask_ratio}_{D}.dat")
+        raw_path = os.path.join(cache_dir, f"kb_raw_data_{encoder_tag}.dat")
 
 
         if os.path.exists(embed_path) and os.path.exists(raw_path):
@@ -187,7 +190,8 @@ class missRetrieval():
 
         cache_dir = f"./latentKB/{task_name}/{dataset_name}"
         os.makedirs(cache_dir, exist_ok=True)
-        KB_cache_path = os.path.join(cache_dir, f"dataset_name_{args.retrieve_encoder}_{args.contrastive_loss}_{args.mask_ratio}_{D}.dat")
+        mining_temp = getattr(args, 'mining_temp', 0.1)
+        KB_cache_path = os.path.join(cache_dir, f"dataset_name_{args.retrieve_encoder}_{args.contrastive_loss}_mt{mining_temp:g}_{args.mask_ratio}_{D}.dat")
     
 
         if os.path.exists(KB_cache_path): 
@@ -415,5 +419,4 @@ class missRetrieval():
 
             
             return x_recon.to(device)
-
 

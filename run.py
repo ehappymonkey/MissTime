@@ -50,7 +50,7 @@ if __name__ == '__main__':
     parser.add_argument('--mask_rate', type=float, default=0.25, help='mask ratio')
 
     # anomaly detection task
-    parser.add_argument('--anomaly_ratio', type=float, default=0.25, help='prior anomaly ratio (%)')
+    parser.add_argument('--anomaly_ratio', type=float, default=0.25, help='prior anomaly ratio (%%)')
 
     # model define
     parser.add_argument('--expand', type=int, default=2, help='expansion factor for Mamba')
@@ -174,6 +174,8 @@ if __name__ == '__main__':
     parser.add_argument('--retrieve_encoder', type=str, default='TimerXL', help='encoder used in retrieval')
     parser.add_argument('--latent_dim', type=int, default=512, help='latent dimension for our contrastive encoder')
     parser.add_argument('--contrastive_loss', type=str, default='normal') # hard_negative
+    parser.add_argument('--mining_temp', type=float, default=0.1,
+                        help='temperature for hard-negative mining; smaller values focus more on hard negatives')
     parser.add_argument('--encoder_epochs', type=int, default=30)
     parser.add_argument('--rag_strategy', type=str, default='channels', choices=['whole', 'channels'])
     parser.add_argument('--contrastive_batch', type=int, default=256)

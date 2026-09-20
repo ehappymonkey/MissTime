@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.venv/
+venv/
+
+# Datasets are distributed through GitHub Releases.
+dataset/
+data/
+
+# Generated experiment artifacts.
+checkpoints/
+pretrained_encoder/
+latentKB/
+results/
+test_results/
+
+# Logs and local editor files.
+*.log
+.idea/
+.vscode/

@@ -1,6 +1,6 @@
 import os
 import torch
-from models import RAFT_DLinear, Dlinear, DLinear, RMTS_feature, TimesNet3, TimeXer, TimeMixer2, MSGNet, TimeMixer, iTransformer, duet, TimeFilter, TSRAG_TimesNet
+from models import RAFT_DLinear, DLinear, RMTS_feature, TimesNet3, TimeXer, TimeMixer2, MSGNet, TimeMixer, iTransformer, duet, TimeFilter, TSRAG_TimesNet
 
 
 class Exp_Basic(object):
@@ -8,7 +8,7 @@ class Exp_Basic(object):
         self.args = args
         self.model_dict = {
             'RAFT': RAFT_DLinear,
-            'Dlinear': Dlinear,
+            'Dlinear': DLinear,
             'DLinear': DLinear,
             'RMTS_feature': RMTS_feature,
             'TimesNet': TimesNet3,
