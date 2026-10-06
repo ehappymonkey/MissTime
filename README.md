@@ -263,7 +263,7 @@ Note: short-term forecasting is handled in the same forecasting pipeline with PE
 
 ## Citation
 
-This work is currently under review at NeurIPS. Citation information will be released after publication.
+This work is currently under review at ICLR. Citation information will be released after publication.
 
 ---
 
